@@ -163,3 +163,106 @@ while running:
 
 pygame.quit()
 sys.exit()
+
+
+
+
+
+import pygame 
+import sys 
+import random 
+import json 
+import os 
+import time 
+from datetime import datetime
+
+pygame.init()
+running = True
+clock = pygame.time.Clock()
+
+# colors
+WHITE = (255, 255, 255)
+BLACK = (0,0,0)
+GREEN = (1, 50, 33)
+
+font = pygame.font.SysFont('Verdana', 60)  
+screen = pygame.display.set_mode((800, 600))
+title_text = font.render('Maze Escape', True, WHITE)
+title_pos = title_text.get_rect(center=(400, 180)) 
+
+class Button:
+    def __init__(self, x, y, w, h, text):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = text
+        self.font = pygame.font.Font(None, 32)
+        self.btn_color = GREEN
+        self.text_color = WHITE
+        self.clicked = False
+        
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.btn_color, self.rect)
+        pygame.draw.rect(surface, BLACK, self.rect, 2)  # border
+        
+        txt_surface = self.font.render(self.text, True, self.text_color)
+        txt_rect = txt_surface.get_rect(center=self.rect.center)
+        surface.blit(txt_surface, txt_rect)
+        
+    def check_click(self, pos):
+        if self.rect.collidepoint(pos):
+            return True
+        return False
+
+        
+
+class MazeLayout():
+    maze = []
+
+    for i in range (5):
+        row = []
+        for j in range(5):
+            cell = random.choice([0, 1])
+            row.append(cell)
+        maze.append(row)
+
+    for row in maze:
+        print(row)
+
+    def DFS(maze, row, col):
+        visited[row][col]  
+
+start_btn = Button(320, 300, 160, 60, "START")
+help_btn = Button(320, 420, 160, 60, "HELP")
+
+
+def checkClick(mouse_pos):
+    mouse_pos = pygame.mouse.get_pos()
+    if start_btn.rect.collidepoint(mouse_pos):
+        return(WHITE)
+
+
+
+while running:
+    mouse_pos = pygame.mouse.get_pos()
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False 
+
+    for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = pygame.mouse.get_pos()
+            level_screen = checkClick(mouse_pos)
+
+
+    screen.fill((0, 0, 0))
+        
+    screen.blit(title_text, title_pos)
+    start_btn.draw(screen)
+    help_btn.draw(screen)
+    
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
+sys.exit()
+            
