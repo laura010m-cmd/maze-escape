@@ -10,12 +10,16 @@ pygame.init()
 running = True
 clock = pygame.time.Clock()
 
+x = 50
+y = 50
 game_state = "menu"
 maze = None
 player = None
 start_time = 0
 elapsed_time = 0
 is_paused = False
+velocity = 5 #smoothest speed for character 
+player_pos = pygame.Vector2(800/2, 600/2)
 
 WHITE = (255, 255, 255)
 BLACK = (0,0,0)
@@ -25,6 +29,8 @@ font = pygame.font.SysFont('Verdana', 60)
 screen = pygame.display.set_mode((800, 600))
 title_text = font.render('Maze Escape', True, WHITE)
 title_pos = title_text.get_rect(center=(400, 180)) 
+
+pygame.display.set_caption("Maze Escape")
 
 class Button:
     def __init__(self, x, y, w, h, txt, action=None):
@@ -81,8 +87,14 @@ pause = pause_button()
 
 
 def start_function():
+    global game_state
+    x = 400
+    y = 300
+    velocity = 5
+    game_state = "playing"
     if checkClick((320, 300)) == True:
         screen.fill(WHITE)
+        game_state = "playing"
     print("start game ")
     
 def toggle_pause():
@@ -142,6 +154,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False 
 
+        key_pressed = pygame.key.get_pressed()
+
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
@@ -152,6 +166,17 @@ while running:
             if game_state == "help":
                 back_btn.check_click(mouse_pos)
 
+
+    key_pressed = pygame.key.get_pressed()
+    if key_pressed[pygame.K_LEFT] or key_pressed[pygame.K_a]:
+        x -= velocity
+    if key_pressed[pygame.K_RIGHT] or key_pressed[pygame.K_d]:
+        x += velocity
+    if key_pressed[pygame.K_UP] or key_pressed[pygame.K_w]:
+        y -= velocity
+    if key_pressed[pygame.K_DOWN] or key_pressed[pygame.K_s]:
+        y += velocity 
+
     screen.fill((0, 0, 0))
     if game_state == "menu":    
         screen.blit(title_text, title_pos)
@@ -160,9 +185,13 @@ while running:
         pause.draw(screen)
 
     elif game_state == "help":
-        help_text = pygame.font.Font(None, 24).render("The aim is to complete these mazes as fast as possible \n The key controls are WASD and arrow keys \n Pausing the game pauses the timer", True, WHITE)
-        screen.blit(help_text, (300 - help_text.get_width()//2, 200))
+        help_text_l1 = pygame.font.Font(None, 24).render("The aim is to complete these mazes as fast as possible", True, WHITE)
+        screen.blit(help_text_l1, (300 - help_text_l1.get_width()//2, 200))
         back_btn.draw(screen)
+
+    elif game_state == "playing":
+        pygame.draw.circle(screen, WHITE, (x, y), 10)
+        
     
 
 
