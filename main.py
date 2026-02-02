@@ -12,13 +12,16 @@ clock = pygame.time.Clock()
 
 x = 50
 y = 50
+TILE = 40
+COLS, ROWS = 10, 10
+
 game_state = "menu"
 maze = None
 player = None
 start_time = 0
 elapsed_time = 0
 is_paused = False
-velocity = 5 #smoothest speed for character 
+velocity = 5 
 player_pos = pygame.Vector2(800/2, 600/2)
 
 WHITE = (255, 255, 255)
@@ -43,7 +46,7 @@ class Button:
         
     def draw(self, surface):
         pygame.draw.rect(surface, self.btn_colour, self.rect)
-        pygame.draw.rect(surface, BLACK, self.rect, 2)  # border
+        pygame.draw.rect(surface, BLACK, self.rect, 2) 
         
         txt_surface = self.font.render(self.txt, True, self.txt_colour)
         txt_rect = txt_surface.get_rect(center=self.rect.center)
@@ -96,6 +99,7 @@ def start_function():
         screen.fill(WHITE)
         game_state = "playing"
     print("start game ")
+    maze = generate_maze()
     
 def toggle_pause():
     global is_paused, elapsed_time, start_time, game_state
@@ -112,8 +116,63 @@ def back_to_menu():
     global game_state
     game_state = "menu"
 
+class Cell:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.walls = {'top': True, 'right': True, 'bottom': True, 'left': True}
+        self.visited = False
 
-class MazeLayout():
+    def draw(self, sc):
+        x, y = self.x * TILE, self.y * TILE
+        if self.walls['top']:
+            pygame.draw.line(sc, pygame.Color('white'), (x, y), (x + TILE, y), 2)
+        if self.walls['right']:
+            pygame.draw.line(sc, pygame.Color('white'), (x + TILE, y), (x + TILE, y + TILE), 2)
+        if self.walls['bottom']:
+            pygame.draw.line(sc, pygame.Color('white'), (x + TILE, y + TILE), (x, y + TILE), 2)
+        if self.walls['left']:
+            pygame.draw.line(sc, pygame.Color('white'), (x, y + TILE), (x, y), 2)
+
+    def check_neighbors(self, grid):
+        neighbors = []
+        # Index math for 1D grid list
+        get_idx = lambda x, y: x + y * COLS
+        
+        if self.y > 0: neighbors.append(grid[get_idx(self.x, self.y - 1)]) # top
+        if self.x < COLS - 1: neighbors.append(grid[get_idx(self.x + 1, self.y)]) # right
+        if self.y < ROWS - 1: neighbors.append(grid[get_idx(self.x, self.y + 1)]) # bottom
+        if self.x > 0: neighbors.append(grid[get_idx(self.x - 1, self.y)]) # left
+
+        unvisited = [n for n in neighbors if n and not n.visited]
+        return random.choice(unvisited) if unvisited else None
+
+def remove_walls(current, next_cell):
+    dx, dy = current.x - next_cell.x, current.y - next_cell.y
+    if dx == 1: current.walls['left'] = next_cell.walls['right'] = False
+    elif dx == -1: current.walls['right'] = next_cell.walls['left'] = False
+    if dy == 1: current.walls['top'] = next_cell.walls['bottom'] = False
+    elif dy == -1: current.walls['bottom'] = next_cell.walls['top'] = False
+
+def generate_maze():
+    grid = [Cell(col, row) for row in range(ROWS) for col in range(COLS)]
+    current = grid[0]
+    stack = []
+    visited_count = 1
+
+    while visited_count < len(grid):
+        current.visited = True
+        next_cell = current.check_neighbors(grid)
+        if next_cell:
+            next_cell.visited = True
+            visited_count += 1
+            stack.append(current)
+            remove_walls(current, next_cell)
+            current = next_cell
+        elif stack:
+            current = stack.pop()
+    return grid
+
+'''class MazeLayout():
     def __init__(self, rows=5, cols=5):
         self.rows = rows
         self.cols = cols 
@@ -131,7 +190,12 @@ class MazeLayout():
 
     def dfs(row, col, end, visited, path):
         if (row, col) == end:
-            path = row, col 
+            path = row, col''' 
+
+'''def display_maze():
+    file  = open("mazefile.txt")'''
+
+
 
 
 start_btn = Button(320, 300, 160, 60, "START", start_function)
@@ -142,8 +206,7 @@ back_btn = Button(220, 290, 160, 50, "BACK", back_to_menu)
 
 def checkClick(mouse_pos):
     mouse_pos = pygame.mouse.get_pos()
-    if start_btn.rect.collidepoint(mouse_pos):
-        return(WHITE)
+
 
 
 
@@ -158,9 +221,11 @@ while running:
 
 
         if event.type == pygame.MOUSEBUTTONDOWN:
+            maze = generate_maze()
             mouse_pos = pygame.mouse.get_pos()
             start_btn.check_click(mouse_pos)
             help.check_click(mouse_pos)
+            
 
 
             if game_state == "help":
@@ -190,7 +255,7 @@ while running:
         back_btn.draw(screen)
 
     elif game_state == "playing":
-        pygame.draw.circle(screen, WHITE, (x, y), 10)
+        pygame.draw.circle(screen, (255,255,255), (x, y), 10)
         
     
 
@@ -200,4 +265,4 @@ while running:
 
 pygame.quit()
 sys.exit()
-            
+             
