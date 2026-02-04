@@ -90,7 +90,7 @@ pause = pause_button()
 
 
 def start_function():
-    global game_state
+    global game_state, maze, x, y
     x = 400
     y = 300
     velocity = 5
@@ -133,17 +133,17 @@ class Cell:
         if self.walls['left']:
             pygame.draw.line(sc, pygame.Color('white'), (x, y + TILE), (x, y), 2)
 
-    def check_neighbors(self, grid):
-        neighbors = []
+    def check_neighbours(self, grid):
+        neighbours = []
         # Index math for 1D grid list
         get_idx = lambda x, y: x + y * COLS
         
-        if self.y > 0: neighbors.append(grid[get_idx(self.x, self.y - 1)]) # top
-        if self.x < COLS - 1: neighbors.append(grid[get_idx(self.x + 1, self.y)]) # right
-        if self.y < ROWS - 1: neighbors.append(grid[get_idx(self.x, self.y + 1)]) # bottom
-        if self.x > 0: neighbors.append(grid[get_idx(self.x - 1, self.y)]) # left
+        if self.y > 0: neighbours.append(grid[get_idx(self.x, self.y - 1)]) # top
+        if self.x < COLS - 1: neighbours.append(grid[get_idx(self.x + 1, self.y)]) # right
+        if self.y < ROWS - 1: neighbours.append(grid[get_idx(self.x, self.y + 1)]) # bottom
+        if self.x > 0: neighbours.append(grid[get_idx(self.x - 1, self.y)]) # left
 
-        unvisited = [n for n in neighbors if n and not n.visited]
+        unvisited = [n for n in neighbours if n and not n.visited]
         return random.choice(unvisited) if unvisited else None
 
 def remove_walls(current, next_cell):
@@ -161,7 +161,7 @@ def generate_maze():
 
     while visited_count < len(grid):
         current.visited = True
-        next_cell = current.check_neighbors(grid)
+        next_cell = current.check_neighbours(grid)
         if next_cell:
             next_cell.visited = True
             visited_count += 1
@@ -255,7 +255,12 @@ while running:
         back_btn.draw(screen)
 
     elif game_state == "playing":
-        pygame.draw.circle(screen, (255,255,255), (x, y), 10)
+        # Draw the generated maze cells
+        if maze:
+            for cell in maze:
+                cell.draw(screen)
+        # Draw player
+        pygame.draw.circle(screen, (200, 0, 0), (x, y), 8)
         
     
 
@@ -265,4 +270,4 @@ while running:
 
 pygame.quit()
 sys.exit()
-             
+            
