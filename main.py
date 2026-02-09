@@ -10,8 +10,8 @@ pygame.init()
 running = True
 clock = pygame.time.Clock()
 
-x = 50
-y = 50
+x = 180
+y = 130
 TILE = 40
 COLS, ROWS = 10, 10
 
@@ -58,7 +58,7 @@ class Button:
                 self.action()
             return True
         return False
-
+    
 
 class help_button():
 
@@ -90,9 +90,9 @@ pause = pause_button()
 
 
 def start_function():
-    global game_state, maze, x, y
-    x = 400
-    y = 300
+    global game_state, maze
+    x = 170
+    y = 70
     velocity = 5
     game_state = "playing"
     if checkClick((320, 300)) == True:
@@ -123,7 +123,7 @@ class Cell:
         self.visited = False
 
     def draw(self, sc):
-        x, y = self.x * TILE, self.y * TILE
+        x, y = self.x * TILE + 150, self.y * TILE + 100
         if self.walls['top']:
             pygame.draw.line(sc, pygame.Color('white'), (x, y), (x + TILE, y), 2)
         if self.walls['right']:
@@ -196,7 +196,7 @@ def generate_maze():
     file  = open("mazefile.txt")'''
 
 
-
+exit_rect = pygame.Rect(510, 460, 40, 40)
 
 start_btn = Button(320, 300, 160, 60, "START", start_function)
 help_btn = Button(43, 35, 20, 20, "?", show_help)
@@ -221,7 +221,7 @@ while running:
 
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            maze = generate_maze()
+
             mouse_pos = pygame.mouse.get_pos()
             start_btn.check_click(mouse_pos)
             help.check_click(mouse_pos)
@@ -231,6 +231,7 @@ while running:
             if game_state == "help":
                 back_btn.check_click(mouse_pos)
 
+        
 
     key_pressed = pygame.key.get_pressed()
     if key_pressed[pygame.K_LEFT] or key_pressed[pygame.K_a]:
@@ -260,8 +261,11 @@ while running:
             for cell in maze:
                 cell.draw(screen)
         # Draw player
-        pygame.draw.circle(screen, (200, 0, 0), (x, y), 8)
-        
+        player = pygame.draw.circle(screen, (255, 255, 255), (x, y), 8)
+        if exit_rect.collidepoint((x, y)) == True:
+            maze = generate_maze()
+            x = 150
+            y = 150
     
 
 
