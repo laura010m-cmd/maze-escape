@@ -1,28 +1,43 @@
 import pygame 
 import sys 
 import random 
-import json 
 import os 
 import time 
 from datetime import datetime
+import sqlite3
+
+new_database = sqlite3.connect("leaderboard.db")
+cursor = new_database.cursor()
+
+
 
 pygame.init()
 running = True
 clock = pygame.time.Clock()
 
-x = 180
-y = 130
+x = 170
+y = 120
 TILE = 40
 COLS, ROWS = 10, 10
+level = 1
+level_font = pygame.font.SysFont('Verdana', 30)
 
 game_state = "menu"
 maze = None
 player = None
-start_time = 0
 elapsed_time = 0
 is_paused = False
-velocity = 5 
+velocity = 4
 player_pos = pygame.Vector2(800/2, 600/2)
+
+input_box = pygame.Rect(350, 220, 500, 35)
+#input box colours: default is grey vs white when clicked 
+box_clicked = pygame.Color(255, 255, 255)
+box_default = pygame.Color(128, 128, 128)
+colour = box_default 
+input_text = ''
+
+clicked = False
 
 WHITE = (255, 255, 255)
 BLACK = (0,0,0)
@@ -90,16 +105,17 @@ pause = pause_button()
 
 
 def start_function():
-    global game_state, maze
+    global game_state, maze, start_time, x, y 
     x = 170
-    y = 70
+    y = 120
     velocity = 5
     game_state = "playing"
     if checkClick((320, 300)) == True:
-        screen.fill(WHITE)
         game_state = "playing"
     print("start game ")
     maze = generate_maze()
+    start_time = pygame.time.get_ticks()
+
     
 def toggle_pause():
     global is_paused, elapsed_time, start_time, game_state
@@ -154,6 +170,7 @@ def remove_walls(current, next_cell):
     elif dy == -1: current.walls['bottom'] = next_cell.walls['top'] = False
 
 def generate_maze():
+    
     grid = [Cell(col, row) for row in range(ROWS) for col in range(COLS)]
     current = grid[0]
     stack = []
@@ -171,7 +188,7 @@ def generate_maze():
         elif stack:
             current = stack.pop()
     return grid
-
+    
 '''class MazeLayout():
     def __init__(self, rows=5, cols=5):
         self.rows = rows
@@ -226,22 +243,41 @@ while running:
             start_btn.check_click(mouse_pos)
             help.check_click(mouse_pos)
             
+            if game_state == "leaderboard":
+                if input_box.collidepoint(event.pos):
+                    clicked = True
+                else:
+                    clicked = False
 
 
             if game_state == "help":
                 back_btn.check_click(mouse_pos)
-
         
+        if event.type == pygame.KEYDOWN and game_state == "leaderboard":
+            if event.key == pygame.K_BACKSPACE:
+                input_text = input_text[:-1]
+            elif event.key == pygame.K_RETURN:
+                print(f"Final Name: {input_text}")
+                '''cursor.execute("""CREATE TABLE playerStats(Name TEXT, Time INTEGER) """)'''
+                cursor.execute("INSERT INTO playerStats (Name, Time) VALUES (?, ?)", (input_text, total_seconds))
+                cursor.execute("SELECT * FROM playerStats")
+                for row in cursor.fetchall():
+                    print(f"{row[0]}: {row[1] // 60} minutes {row[1] % 60} seconds")
+                    cursor.execute("SELECT Name, Time FROM PlayerStats ORDER BY Time ASC LIMIT 10;")
+                # Commit changes and close connection
+                new_database.commit()
+                input_text = ""
+                game_state = "menu"
+            else:
+                if event.unicode.isprintable():
+                    input_text = input_text + event.unicode
+    if clicked:
+        colour = box_clicked
+    else:
+        colour = box_default
 
-    key_pressed = pygame.key.get_pressed()
-    if key_pressed[pygame.K_LEFT] or key_pressed[pygame.K_a]:
-        x -= velocity
-    if key_pressed[pygame.K_RIGHT] or key_pressed[pygame.K_d]:
-        x += velocity
-    if key_pressed[pygame.K_UP] or key_pressed[pygame.K_w]:
-        y -= velocity
-    if key_pressed[pygame.K_DOWN] or key_pressed[pygame.K_s]:
-        y += velocity 
+ 
+
 
     screen.fill((0, 0, 0))
     if game_state == "menu":    
@@ -256,22 +292,85 @@ while running:
         back_btn.draw(screen)
 
     elif game_state == "playing":
+        
         # Draw the generated maze cells
+
+
         if maze:
             for cell in maze:
                 cell.draw(screen)
         # Draw player
         player = pygame.draw.circle(screen, (255, 255, 255), (x, y), 8)
+
+        level_display = f"Level: {level}"
+        screen.blit(level_font.render(level_display, True, WHITE), (350, 50))
+        
         if exit_rect.collidepoint((x, y)) == True:
             maze = generate_maze()
-            x = 150
-            y = 150
-    
+            x = 170
+            y = 120
+            level = level + 1 
+
+            if level > 1:
+                game_state = "leaderboard"
+                
 
 
+        total_seconds = (( pygame.time.get_ticks() - start_time) // 1000) 
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+  
+        if seconds == 60:
+            minutes = minutes + 1 
+        display_time = f"Time:  {minutes}:{seconds:02d}"
+
+
+        time_font = pygame.font.SysFont('Verdana', 30)
+
+        screen.blit(time_font.render(display_time, True, WHITE), (150, 50))
+
+
+        column = (x - 150) // TILE
+        row  = (y - 100) // TILE
+
+        index = column + (row * COLS)
+        current_cell = maze[index]
+
+        right_edge = x + 8 + velocity
+        left_edge = x - 8 - velocity
+        top_edge = y - 8 - velocity 
+        bottom_edge = y + 8 + velocity
+
+        key_pressed = pygame.key.get_pressed()
+        if current_cell.walls['left'] == False or left_edge > column * TILE + 150:
+            if key_pressed[pygame.K_LEFT] or key_pressed[pygame.K_a]:
+                x -= velocity
+        if current_cell.walls['right'] == False or right_edge < column * TILE + 150 + TILE:
+            if key_pressed[pygame.K_RIGHT] or key_pressed[pygame.K_d]:
+                x += velocity
+        if current_cell.walls['top'] == False or top_edge > row * TILE + 100:
+            if key_pressed[pygame.K_UP] or key_pressed[pygame.K_w]:
+                y -= velocity
+        if current_cell.walls['bottom'] == False or bottom_edge < row * TILE + 100 + TILE:
+            if key_pressed[pygame.K_DOWN] or key_pressed[pygame.K_s]:
+                y += velocity 
+
+    elif game_state == "leaderboard":
+       screen.fill((0, 0, 0))
+       screen.blit(level_font.render(f"Leaderboard: ", True, WHITE), (300, 50))
+       
+       pygame.draw.rect(screen, colour, input_box)
+       text_surface = level_font.render(input_text, True, (0, 0, 0))
+       screen.blit(text_surface, (input_box.x+5, input_box.y+5))
+       input_box.width = max(250, text_surface.get_width()+10)
+
+
+        
+  
     pygame.display.flip()
     clock.tick(60)
 
+new_database.close()
 pygame.quit()
 sys.exit()
             
