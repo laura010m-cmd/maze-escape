@@ -6,10 +6,11 @@ import time
 from datetime import datetime
 import sqlite3
 
-new_database = sqlite3.connect("leaderboard.db")
+
+new_database = sqlite3.connect("leaderboard_input.db")
 cursor = new_database.cursor()
 
-
+leaderboard_list = []
 
 pygame.init()
 running = True
@@ -81,7 +82,7 @@ class help_button():
         dist = ((pos[0] - 50)**2 + (pos[1] - 45)**2)**0.5
         if dist <= 20:
             show_help()
-
+    
     def draw(self, surface):
         pygame.draw.circle(surface, GREEN, (50, 45), 20 )
         surface.blit(pygame.font.Font(None, 32).render("?", True, WHITE), (43, 35))
@@ -95,8 +96,14 @@ def show_help():
 
 class pause_button():
     def draw(self, surface):
-        pygame.draw.circle(surface, GREEN, (150, 45), 20 )
-        surface.blit(pygame.font.Font(None, 32).render("||", True, WHITE), (144, 32))
+        pygame.draw.circle(surface, GREEN, (120, 45), 20 )
+        surface.blit(pygame.font.Font(None, 32).render("||", True, WHITE), (114, 32))
+
+    def check_click(self, pos):
+        dist = ((pos[0] - 120)**2 + (pos[1] - 45)**2)**0.5
+        if dist <= 20:
+            toggle_pause()
+
 
     
 
@@ -110,18 +117,18 @@ def start_function():
     y = 120
     velocity = 5
     game_state = "playing"
-    if checkClick((320, 300)) == True:
+    if checkClick((320, 300)) == True and game_state == "menu":
         game_state = "playing"
-    print("start game ")
     maze = generate_maze()
     start_time = pygame.time.get_ticks()
+    
 
     
 def toggle_pause():
     global is_paused, elapsed_time, start_time, game_state
     if game_state == "playing":
         is_paused = True
-        elapsed_time += pygame.time.get_ticks() - start_time
+        elapsed_time += (pygame.time.get_ticks() - start_time)
         game_state = "paused"
     elif game_state == "paused":
         is_paused = False
@@ -129,8 +136,14 @@ def toggle_pause():
         game_state = "playing"
  
 def back_to_menu():
-    global game_state
+    global game_state, level, total_seconds, elapsed_seconds
     game_state = "menu"
+    level = 1 
+    total_seconds = 0
+    elapsed_seconds = 0 
+
+
+
 
 class Cell:
     def __init__(self, x, y):
@@ -217,7 +230,9 @@ exit_rect = pygame.Rect(510, 460, 40, 40)
 
 start_btn = Button(320, 300, 160, 60, "START", start_function)
 help_btn = Button(43, 35, 20, 20, "?", show_help)
-back_btn = Button(220, 290, 160, 50, "BACK", back_to_menu)
+back_btn = Button(330, 310, 160, 50, "BACK", back_to_menu)
+resume_btn = Button(330, 310, 160, 50, "RESUME", toggle_pause)
+menu_btn = Button(550, 20, 160, 60, "MENU", back_to_menu)
 
 
 
@@ -240,34 +255,45 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
 
             mouse_pos = pygame.mouse.get_pos()
-            start_btn.check_click(mouse_pos)
             help.check_click(mouse_pos)
+            pause.check_click(mouse_pos)
             
-            if game_state == "leaderboard":
+            if game_state == "leaderboard_input":
                 if input_box.collidepoint(event.pos):
                     clicked = True
                 else:
                     clicked = False
 
+            if game_state == "menu":
+                start_btn.check_click(mouse_pos)
 
             if game_state == "help":
                 back_btn.check_click(mouse_pos)
+
+            if game_state == "paused":
+                resume_btn.check_click(mouse_pos)
+
+            if game_state == "leaderboard":
+                menu_btn.check_click(mouse_pos)
         
-        if event.type == pygame.KEYDOWN and game_state == "leaderboard":
+        if event.type == pygame.KEYDOWN and game_state == "leaderboard_input":
             if event.key == pygame.K_BACKSPACE:
                 input_text = input_text[:-1]
             elif event.key == pygame.K_RETURN:
-                print(f"Final Name: {input_text}")
-                '''cursor.execute("""CREATE TABLE playerStats(Name TEXT, Time INTEGER) """)'''
+                #print(f"Final Name: {input_text}")
+                #cursor.execute("""CREATE TABLE playerStats(Name TEXT, Time INTEGER) """)
                 cursor.execute("INSERT INTO playerStats (Name, Time) VALUES (?, ?)", (input_text, total_seconds))
                 cursor.execute("SELECT * FROM playerStats")
+                cursor.execute("SELECT Name, Time FROM PlayerStats ORDER BY Time ASC LIMIT 10;")
+
+                leaderboard_list = []
                 for row in cursor.fetchall():
-                    print(f"{row[0]}: {row[1] // 60} minutes {row[1] % 60} seconds")
-                    cursor.execute("SELECT Name, Time FROM PlayerStats ORDER BY Time ASC LIMIT 10;")
+                     entry = f"{row[0]}:            {row[1] // 60} minutes {row[1] % 60} seconds"
+                     leaderboard_list.append(entry)
                 # Commit changes and close connection
                 new_database.commit()
                 input_text = ""
-                game_state = "menu"
+                game_state = "leaderboard"
             else:
                 if event.unicode.isprintable():
                     input_text = input_text + event.unicode
@@ -276,7 +302,6 @@ while running:
     else:
         colour = box_default
 
- 
 
 
     screen.fill((0, 0, 0))
@@ -290,6 +315,24 @@ while running:
         help_text_l1 = pygame.font.Font(None, 24).render("The aim is to complete these mazes as fast as possible", True, WHITE)
         screen.blit(help_text_l1, (300 - help_text_l1.get_width()//2, 200))
         back_btn.draw(screen)
+
+    elif game_state == "leaderboard":
+        y = 100
+        leaderboard_title = level_font.render('Leaderboard', True, WHITE)
+        screen.blit(leaderboard_title, (300, 50)) 
+        for i in leaderboard_list:
+            display_list = level_font.render(i, True, (255, 255, 255))
+            screen.blit(display_list, (50, 10 + y))
+            y += 50
+        menu_btn.draw(screen)
+
+    elif game_state == "paused":
+        screen.fill(BLACK)
+        pause_text = level_font.render("Paused", True, WHITE)
+        screen.blit(pause_text, (350, 250))
+        resume_btn.draw(screen)
+        
+
 
     elif game_state == "playing":
         
@@ -311,12 +354,12 @@ while running:
             y = 120
             level = level + 1 
 
-            if level > 1:
-                game_state = "leaderboard"
+            if level > 10:
+                game_state = "leaderboard_input"
                 
 
 
-        total_seconds = (( pygame.time.get_ticks() - start_time) // 1000) 
+        total_seconds = ((( pygame.time.get_ticks() - start_time) + elapsed_time) // 1000) 
         minutes = total_seconds // 60
         seconds = total_seconds % 60
   
@@ -355,16 +398,16 @@ while running:
             if key_pressed[pygame.K_DOWN] or key_pressed[pygame.K_s]:
                 y += velocity 
 
-    elif game_state == "leaderboard":
+    elif game_state == "leaderboard_input":
        screen.fill((0, 0, 0))
-       screen.blit(level_font.render(f"Leaderboard: ", True, WHITE), (300, 50))
+       screen.blit(level_font.render(f"Enter name:  ", True, WHITE), (300, 50))
        
        pygame.draw.rect(screen, colour, input_box)
        text_surface = level_font.render(input_text, True, (0, 0, 0))
        screen.blit(text_surface, (input_box.x+5, input_box.y+5))
        input_box.width = max(250, text_surface.get_width()+10)
 
-
+    pause.draw(screen)
         
   
     pygame.display.flip()
@@ -373,4 +416,5 @@ while running:
 new_database.close()
 pygame.quit()
 sys.exit()
+            
             
