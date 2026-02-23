@@ -9,6 +9,8 @@ import sqlite3
 
 new_database = sqlite3.connect("leaderboard_input.db")
 cursor = new_database.cursor()
+#cursor.execute("DELETE FROM playerStats")
+#new_database.commit()
 
 leaderboard_list = []
 
@@ -201,29 +203,6 @@ def generate_maze():
         elif stack:
             current = stack.pop()
     return grid
-    
-'''class MazeLayout():
-    def __init__(self, rows=5, cols=5):
-        self.rows = rows
-        self.cols = cols 
-        self.maze = []
-
-        for i in range (rows):
-            row = []
-            for j in range(cols):
-                cell = random.choice([0, 1])
-                row.append(cell)
-            self.maze.append(row)
-
-        for row in self.maze:
-            print(row)
-
-    def dfs(row, col, end, visited, path):
-        if (row, col) == end:
-            path = row, col''' 
-
-'''def display_maze():
-    file  = open("mazefile.txt")'''
 
 
 exit_rect = pygame.Rect(510, 460, 40, 40)
@@ -284,7 +263,7 @@ while running:
                 #cursor.execute("""CREATE TABLE playerStats(Name TEXT, Time INTEGER) """)
                 cursor.execute("INSERT INTO playerStats (Name, Time) VALUES (?, ?)", (input_text, total_seconds))
                 cursor.execute("SELECT * FROM playerStats")
-                cursor.execute("SELECT Name, Time FROM PlayerStats ORDER BY Time ASC LIMIT 10;")
+                cursor.execute("SELECT Name, Time FROM playerStats ORDER BY Time ASC LIMIT 10;")
 
                 leaderboard_list = []
                 for row in cursor.fetchall():
@@ -354,7 +333,7 @@ while running:
             y = 120
             level = level + 1 
 
-            if level > 10:
+            if level > 1:
                 game_state = "leaderboard_input"
                 
 
@@ -416,5 +395,5 @@ while running:
 new_database.close()
 pygame.quit()
 sys.exit()
-            
+              
             
