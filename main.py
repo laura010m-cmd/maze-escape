@@ -6,11 +6,16 @@ import time
 from datetime import datetime
 import sqlite3
 
-
-new_database = sqlite3.connect("leaderboard_input.db")
+os.path.abspath(__file__)
+database_path = os.path.join(os.path.dirname(__file__), "leaderboard_input.db")
+new_database = sqlite3.connect(database_path)
 cursor = new_database.cursor()
+
+
 #cursor.execute("DELETE FROM playerStats")
 #new_database.commit()
+
+
 
 leaderboard_list = []
 
@@ -82,7 +87,7 @@ class help_button():
 
     def check_click(self, pos):
         dist = ((pos[0] - 50)**2 + (pos[1] - 45)**2)**0.5
-        if dist <= 20:
+        if dist <= 25:
             show_help()
     
     def draw(self, surface):
@@ -333,7 +338,7 @@ while running:
             y = 120
             level = level + 1 
 
-            if level > 1:
+            if level > 10:
                 game_state = "leaderboard_input"
                 
 
@@ -358,13 +363,15 @@ while running:
         index = column + (row * COLS)
         current_cell = maze[index]
 
-        right_edge = x + 8 + velocity
-        left_edge = x - 8 - velocity
-        top_edge = y - 8 - velocity 
-        bottom_edge = y + 8 + velocity
+        buffer = 2
+        right_edge = x + 8 + buffer 
+        left_edge = x - 8 - buffer 
+        top_edge = y - 8 - buffer 
+        bottom_edge = y + 8 + buffer 
+
 
         key_pressed = pygame.key.get_pressed()
-        if current_cell.walls['left'] == False or left_edge > column * TILE + 150:
+        if current_cell.walls['left'] == False or left_edge > column * TILE + 150 :
             if key_pressed[pygame.K_LEFT] or key_pressed[pygame.K_a]:
                 x -= velocity
         if current_cell.walls['right'] == False or right_edge < column * TILE + 150 + TILE:
@@ -395,5 +402,5 @@ while running:
 new_database.close()
 pygame.quit()
 sys.exit()
-              
+                
             
