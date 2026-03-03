@@ -10,7 +10,12 @@ os.path.abspath(__file__)
 database_path = os.path.join(os.path.dirname(__file__), "leaderboard_input.db")
 new_database = sqlite3.connect(database_path)
 cursor = new_database.cursor()
-
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS playerStats (
+        Name TEXT,
+        Time INTEGER
+    )
+""")
 
 #cursor.execute("DELETE FROM playerStats")
 #new_database.commit()
@@ -265,8 +270,8 @@ while running:
                 input_text = input_text[:-1]
             elif event.key == pygame.K_RETURN:
                 #print(f"Final Name: {input_text}")
-                #cursor.execute("""CREATE TABLE playerStats(Name TEXT, Time INTEGER) """)
                 cursor.execute("INSERT INTO playerStats (Name, Time) VALUES (?, ?)", (input_text, total_seconds))
+                
                 cursor.execute("SELECT * FROM playerStats")
                 cursor.execute("SELECT Name, Time FROM playerStats ORDER BY Time ASC LIMIT 10;")
 
@@ -402,5 +407,7 @@ while running:
 new_database.close()
 pygame.quit()
 sys.exit()
+                
+            
                 
             
