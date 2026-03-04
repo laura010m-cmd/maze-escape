@@ -268,24 +268,29 @@ while running:
         if event.type == pygame.KEYDOWN and game_state == "leaderboard_input":
             if event.key == pygame.K_BACKSPACE:
                 input_text = input_text[:-1]
-            elif event.key == pygame.K_RETURN:
-                #print(f"Final Name: {input_text}")
-                cursor.execute("INSERT INTO playerStats (Name, Time) VALUES (?, ?)", (input_text, total_seconds))
-                
-                cursor.execute("SELECT * FROM playerStats")
-                cursor.execute("SELECT Name, Time FROM playerStats ORDER BY Time ASC LIMIT 10;")
 
-                leaderboard_list = []
-                for row in cursor.fetchall():
-                     entry = f"{row[0]}:            {row[1] // 60} minutes {row[1] % 60} seconds"
-                     leaderboard_list.append(entry)
-                # Commit changes and close connection
-                new_database.commit()
-                input_text = ""
-                game_state = "leaderboard"
+            elif event.key == pygame.K_RETURN:
+
+                if input_text.strip() != "" and len(input_text.strip()) <  16:
+                    #print(f"Final Name: {input_text}")
+                    cursor.execute("INSERT INTO playerStats (Name, Time) VALUES (?, ?)", (input_text, total_seconds))
+                    
+                    cursor.execute("SELECT * FROM playerStats")
+                    cursor.execute("SELECT Name, Time FROM playerStats ORDER BY Time ASC LIMIT 10;")
+
+                    leaderboard_list = []
+                    for row in cursor.fetchall():
+                        entry = f"{row[0]}:            {row[1] // 60} minutes {row[1] % 60} seconds"
+                        leaderboard_list.append(entry)
+                    # Commit changes and close connection
+                    new_database.commit()
+                    input_text = ""
+                    game_state = "leaderboard"
             else:
-                if event.unicode.isprintable():
-                    input_text = input_text + event.unicode
+
+                if len(input_text) < 16:
+                    if event.unicode.isprintable():
+                        input_text = input_text + event.unicode
     if clicked:
         colour = box_clicked
     else:
@@ -343,7 +348,7 @@ while running:
             y = 120
             level = level + 1 
 
-            if level > 10:
+            if level > 1:
                 game_state = "leaderboard_input"
                 
 
@@ -395,6 +400,8 @@ while running:
        
        pygame.draw.rect(screen, colour, input_box)
        text_surface = level_font.render(input_text, True, (0, 0, 0))
+      
+           
        screen.blit(text_surface, (input_box.x+5, input_box.y+5))
        input_box.width = max(250, text_surface.get_width()+10)
 
@@ -408,6 +415,5 @@ new_database.close()
 pygame.quit()
 sys.exit()
                 
-            
-                
+             
             
