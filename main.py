@@ -6,6 +6,8 @@ import time
 from datetime import datetime
 import sqlite3
 
+#creating and linking SQLite database, making file path non specific 
+
 os.path.abspath(__file__)
 database_path = os.path.join(os.path.dirname(__file__), "leaderboard_input.db")
 new_database = sqlite3.connect(database_path)
@@ -27,6 +29,8 @@ leaderboard_list = []
 pygame.init()
 running = True
 clock = pygame.time.Clock()
+
+#initialising variables for calculations
 
 x = 170
 y = 120
