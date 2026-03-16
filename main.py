@@ -383,6 +383,7 @@ while running:
         top_edge = y - 8 - buffer 
         bottom_edge = y + 8 + buffer 
 
+        #checking for collisions before commiting to movement 
 
         key_pressed = pygame.key.get_pressed()
         if current_cell.walls['left'] == False or left_edge > column * TILE + 150 :
